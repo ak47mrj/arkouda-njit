@@ -15,7 +15,8 @@ __all__ = ["Graph","graph_query",
            "stream_tri_cnt",
            "streamPL_tri_cnt",
            "graph_ktruss",
-           "graph_jaccard_coefficient" ]
+           "graph_jaccard_coefficient",
+           "graph_page_rank" ]
 
 class Graph:
     """
