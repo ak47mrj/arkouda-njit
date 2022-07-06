@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3                                                         
 
-import time
-import argparse
+import time, argparse
+import numpy as np
 import arkouda as ak
 import random
 import string
@@ -9,27 +9,22 @@ import arkouda_njit as njit
 
 TYPES = ('int64', 'float64', 'bool', 'str')
 
-
-def time_ak_sa(vsize, strlen, trials, dtype):
+def time_ak_sa( vsize,strlen, trials, dtype):
     print(">>> arkouda suffix array")
     cfg = ak.get_config()
     Nv = vsize * cfg["numLocales"]
     print("numLocales = {},  num of strings  = {:,}".format(cfg["numLocales"], Nv))
 
     if dtype == 'str':
-        v = ak.random_strings_uniform(1, strlen, Nv)
+         v = ak.random_strings_uniform(1, strlen, Nv)
     else:
         print("Wrong data type")
-    c = njit.suffix_array(v)
-    print("All the random strings are as follows")
-    for k in range(vsize):
-        print("the {} th random tring ={}".format(k, v[k]))
-        print("the {} th suffix array ={}".format(k, c[k]))
-        print("")
+    c=njit.suffix_array(v)
+    
     timings = []
     for _ in range(trials):
         start = time.time()
-        c = njit.suffix_array(v)
+        c=njit.suffix_array(v)
         end = time.time()
         timings.append(end - start)
     tavg = sum(timings) / trials
@@ -47,16 +42,16 @@ def time_ak_sa(vsize, strlen, trials, dtype):
 def suffixArray(s):
     suffixes = [(s[i:], i) for i in range(len(s))]
     suffixes.sort(key=lambda x: x[0])
-    sa = [s[1] for s in suffixes]
+    sa= [s[1] for s in suffixes]
+    #sa.insert(0,len(sa))
     return sa
 
-
 def time_np_sa(vsize, strlen, trials, dtype):
-    s = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(strlen))
+    s=''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(strlen))
     timings = []
     for _ in range(trials):
         start = time.time()
-        sa = suffixArray(s)
+        sa=suffixArray(s)
         end = time.time()
         timings.append(end - start)
     tavg = sum(timings) / trials
@@ -69,18 +64,17 @@ def time_np_sa(vsize, strlen, trials, dtype):
         print("Wrong data type")
     print("Average rate = {:.2f} GiB/sec".format(bytes_per_sec/2**30))
 
-
 def check_correctness( vsize,strlen, trials, dtype):
     Ni = strlen
     Nv = vsize
 
     v = ak.random_strings_uniform(1, Ni, Nv)
-    c = njit.suffix_array(v)
+    c=njit.suffix_array(v)
     for k in range(Nv):
-        s = v[k]
-        sa = suffixArray(s)
-        aksa = c[k]
-        assert sa == aksa
+        s=v[k]
+        sa=suffixArray(s)
+        aksa=c[k]
+        assert (sa==aksa)
 
 
 def create_parser():
@@ -97,6 +91,7 @@ def create_parser():
     return parser
 
 
+    
 if __name__ == "__main__":
     import sys
     parser = create_parser()
@@ -111,10 +106,12 @@ if __name__ == "__main__":
         print("CORRECT")
         sys.exit(0)
 
+
     print("length of strings = {:,}".format(args.size))
     print("number of strings = {:,}".format(args.number))
     print("number of trials = ", args.trials)
     time_ak_sa(args.number, args.size, args.trials, args.dtype)
     if args.numpy:
         time_np_sa(args.number, args.size, args.trials, args.dtype)
+    ak.shutdown()
     sys.exit(0)

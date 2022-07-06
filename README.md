@@ -12,10 +12,10 @@ will build the Arkouda server including the Graph server functions.
 python server-config.py --help
 
 # Sample invocation
-python server-config.py --arkouda=$HOME/projects/arkouda
+python server-config.py --arkouda=$ArkoudaHomeDirectory
 
 # Sample execution
-python server-config.py --arkouda=$HOME/projects/arkouda | bash
+python server-config.py --arkouda=$ArkoudaHomeDirectory | bash
 ```
 
 ## Client code
@@ -38,9 +38,23 @@ BFSMsg--for breadth first search
 TriCntMsg--for triangle counting
 TrussMsg--for truss analysis
 SuffixArrayMsg--for suffix array
+SuffixArrayMsg
+GraphMsg-- for the basic graph operation
+TriCtrMsg-- for triangle centrality
+JaccardMsg-- for Jaccard coefficients
 ```
 
-## Run Python Code
+
+## Test  code
+```bash
+client: Python test code
+   benchmarks: different benchmark code
+server:
+   UnitTestCh: chaple unit testing code of the extended functions
+```
+
+
+## Call extended functions in
 ```bash
 (1) Under the master arkouda directory, copy the arkouda-njit directory to here and rename it as arkouda_njit or 
 create a arkouda_njit link to the arkouda-njit directory

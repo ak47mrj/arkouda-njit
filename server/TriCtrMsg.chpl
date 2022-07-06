@@ -32,7 +32,7 @@ module TriCtrMsg {
   use Atomics;
   use IO.FormattedIO; 
   use GraphArray;
-  use GraphGraph;
+  use GraphMsg;
 
 
   private config const logLevel = ServerConfig.logLevel;
@@ -64,11 +64,17 @@ module TriCtrMsg {
       var TriCtr:[0..Nv-1] real;
       var TriNum=makeDistArray(Nv,atomic int);
       var NeiTriNum=makeDistArray(Nv,atomic int);
+      var NeiNonTriNum=makeDistArray(Nv,atomic int);
+      var NeiAry=makeDistArray(Ne,bool);
+      NeiAry=false;
       TriCtr=0.0;
       forall i in TriNum {
           i.write(0);
       }
       forall i in NeiTriNum {
+          i.write(0);
+      }
+      forall i in NeiNonTriNum {
           i.write(0);
       }
 
@@ -186,9 +192,7 @@ module TriCtrMsg {
                                 if ( (nei[u]>1)  ){
                                    forall x in dst[beginTmp..endTmp] with (+ reduce triCount)  {
                                        var  e=exactEdge(u,x);//here we find the edge ID to check if it has been removed
-                                       if (e==-1){
-                                          //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                       } else {
+                                       if (e!=-1){
                                           if ((x !=v) && (i<e)) {
                                                  var e3=findEdge(x,v);
                                                  // wedge case i<e, u->v, u->x
@@ -197,9 +201,9 @@ module TriCtrMsg {
                                                          TriNum[u].add(1);
                                                          TriNum[v].add(1);
                                                          TriNum[x].add(1);
-                                                         NeiTriNum[u].add(2);
-                                                         NeiTriNum[v].add(2);
-                                                         NeiTriNum[x].add(2);
+                                                         NeiAry[i]=true;
+                                                         NeiAry[e]=true;
+                                                         NeiAry[e3]=true;
                                                  }
                                           }
                                        }
@@ -214,21 +218,19 @@ module TriCtrMsg {
                                    //forall x in dst[beginTmp..endTmp] with (ref vadj) {
                                    forall x in dst[beginTmp..endTmp] with (+ reduce triCount) {
                                        var  e=exactEdge(v,x);//here we find the edge ID to check if it has been removed
-                                       if (e==-1){
-                                          //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
-                                       } else {
+                                       if (e!=-1){
                                           if ( (x !=u) && (i<e)) {
                                                  var e3=exactEdge(x,u);
                                                  if (e3!=-1) {
-                                                     if ( (src[e3]==x) && (dst[e3]==u) && (e<e3)) {
-                                                         // cycle case i<e<e3, u->v->x->u
+                                                     if ( (src[e3]==x) && (dst[e3]==u) && (i<e3)) {
+                                                         // cycle case i<e,i<e3, u->v->x->u
                                                          triCount+=1;
                                                          TriNum[u].add(1);
                                                          TriNum[v].add(1);
                                                          TriNum[x].add(1);
-                                                         NeiTriNum[u].add(2);
-                                                         NeiTriNum[v].add(2);
-                                                         NeiTriNum[x].add(2);
+                                                         NeiAry[i]=true;
+                                                         NeiAry[e]=true;
+                                                         NeiAry[e3]=true;
                                                      }
                                                  }
                                           }
@@ -251,25 +253,40 @@ module TriCtrMsg {
              TotalCnt[0]+=i;
           }
 
+
+          coforall loc in Locales {
+                on loc {
+                     var ld = src.localSubdomain();
+                     var startEdge = ld.low;
+                     var endEdge = ld.high;
+
+                     forall i in startEdge..endEdge {
+                         var u = src[i];
+                         var v = dst[i];
+                         if NeiAry[i] {
+                              NeiTriNum[u].add(TriNum[v].read());                   
+                              NeiTriNum[v].add(TriNum[u].read());                   
+                         }else{
+                              NeiNonTriNum[u].add(TriNum[v].read());                   
+                              NeiNonTriNum[v].add(TriNum[u].read()); 
+                         }
+                     }
+
+                }// end of  on loc 
+          } // end of coforall loc in Locales 
+
           coforall loc in Locales {
                 on loc {
 
                      var ld = nei.localSubdomain();
                      var startVer = ld.low;
                      var endVer = ld.high;
-                     var curnum=0:int;
-                     forall i in startVer..endVer with (+ reduce curnum){
-                             var beginTmp=start_i[i];
-                             var endTmp=beginTmp+nei[i]-1;
-                             forall j in beginTmp..endTmp with (+ reduce curnum) {
-                                   curnum+=TriNum[dst[j]].read();
-                             }
-                             beginTmp=start_iR[i];
-                             endTmp=beginTmp+neiR[i]-1;
-                             forall j in beginTmp..endTmp with (+ reduce curnum) {
-                                   curnum+=TriNum[dstR[j]].read();
-                             }
-                             TriCtr[i]=(curnum-(NeiTriNum[i].read()+TriNum[i].read())*2/3+TriNum[i].read()):real/TotalCnt[0]:real;
+                     forall i in startVer..endVer {
+                             TriCtr[i]=(NeiNonTriNum[i].read()+((NeiTriNum[i].read()+TriNum[i].read()):real)*1/3):real/TotalCnt[0]:real;
+                             writeln("Number of Triangles for vertex ", i," =",TriNum[i].read());
+                             writeln("Sum of number of Triangles for vertex ", i,"'s neighbour =",NeiTriNum[i].read());
+                             writeln("Sum of number of Non Triangles for vertex ", i,"'s neighbour =",NeiNonTriNum[i].read());
+                             writeln("Triangle Centrality of  vertex ", i," =",TriCtr[i]);
                      }
 
                 }// end of  on loc 
