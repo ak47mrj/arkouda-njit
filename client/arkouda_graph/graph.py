@@ -443,3 +443,29 @@ def graph_jaccard_coefficient(graph: Graph) -> pdarray:
 
         repMsg = generic_msg(cmd=cmd,args=args)
         return create_pdarray(repMsg)
+
+@typechecked
+def graph_page_rank(graph: Graph) -> pdarray:
+        """
+        This function will return the pagerank of each vertex in a static graph.
+        Returns
+        -------
+        pdarray
+            The pagerank value of each vertex.
+        See Also
+        --------
+        Notes
+        -----
+        
+        Raises
+        ------  
+        RuntimeError
+        """
+        cmd="segmentedGraphPR"
+        args = "{} {} {} {} {}".format(
+                 graph.n_vertices,graph.n_edges,\
+                 graph.directed,graph.weighted,\
+                 graph.name)
+
+        repMsg = generic_msg(cmd=cmd,args=args)
+        return create_pdarray(repMsg)
