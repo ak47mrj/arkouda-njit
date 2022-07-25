@@ -59,7 +59,6 @@ module TriCtrMsg {
 
       var TotalCnt:[0..0] int;
       var subTriSum: [0..numLocales-1] int;
-      var NeiNonTriNum=makeDistArray(Nv,atomic int);
       var TriCtr:[0..Nv-1] real;
       var TriNum=makeDistArray(Nv,atomic int);
       var NeiTriNum=makeDistArray(Nv,atomic int);
@@ -268,10 +267,7 @@ module TriCtrMsg {
                               NeiNonTriNum[u].add(TriNum[v].read());                   
                               NeiNonTriNum[v].add(TriNum[u].read()); 
                          }
-                         else {
-                              NeiNonTriNum[u].add(TriNum[v].read());                   
-                              NeiNonTriNum[v].add(TriNum[u].read()); 
-                         }
+                         
                      }
 
                 }// end of  on loc 
