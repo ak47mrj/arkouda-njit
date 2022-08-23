@@ -42,8 +42,10 @@ module PageRankMsg {
   //Given a graph, calculate the pagerank of the graph
   proc segPageRankMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTuple throws {
       var repMsg: string;
-      var (n_verticesN,n_edgesN,directedN,weightedN,graphEntryName,restpart )
-          = payload.splitMsgToTuple(6);
+      var (damping_factor,threshold,n_verticesN,n_edgesN,directedN,weightedN,graphEntryName,restpart )
+          = payload.splitMsgToTuple(8);
+      var d=damping_factor:real;
+      var error = threshold:real;
       var Nv=n_verticesN:int;
       var Ne=n_edgesN:int;
       var Directed=false:bool;
@@ -64,7 +66,7 @@ module PageRankMsg {
       var subSum: [0..numLocales-1] real;
       var subError: [0..numLocales-1] real;
       var TotalSum: [0..0] real;
-      var d = 0.85: real;
+      //var d = 0.85: real;
       var maxerror = 1.0 :real;
           
       PageRank=1.0/Nv;
@@ -85,11 +87,11 @@ module PageRankMsg {
           
           var iteration = 1 :int;
 
-          while(maxerror > 0.00001){
+          while(maxerror > error){
                 maxerror = -1.0 : real;
                 subSum=0.0;
                 TotalSum=0.0;
-                writeln(iteration, "round of iteration");
+                //writeln(iteration, "round of iteration");
                 iteration+=1;
                 coforall loc in Locales {
                     on loc {
@@ -120,15 +122,6 @@ module PageRankMsg {
                     TotalSum[0]+=i;
                 }
 
-                //writeln("TotalSum is ", TotalSum[0]);
-                
-                // for i in 0..Nv-1{
-                //     tmpPageRank[i] = 0.85 * (tmpPageRank[i]+TotalSum[0]) + (1.0-0.85) / (Nv:real); 
-                //     //writeln(i,"'s pagerank is ", tmpPageRank[i]);
-                //     if (abs(PageRank[i]-tmpPageRank[i]) >= maxerror ) {
-                //         maxerror = abs(PageRank[i]-tmpPageRank[i]);
-                //     }
-                // }
 
                 coforall loc in Locales{
                     on loc{
@@ -137,8 +130,7 @@ module PageRankMsg {
                         var endVer = ld.high;
                         var subMaxError = -1.0:real;
                         forall i in startVer..endVer with (max reduce subMaxError){
-                            tmpPageRank[i] = 0.85 * (tmpPageRank[i]+TotalSum[0]) + (1.0-0.85) / Nv:real;
-                            //writeln(i,"'s pagerank is ", tmpPageRank[i]);
+                            tmpPageRank[i] = d * (tmpPageRank[i]+TotalSum[0]) + (1.0-d) / Nv:real;
                             if (abs(PageRank[i]-tmpPageRank[i]) >= subMaxError ) {
                                 subMaxError = abs(PageRank[i]-tmpPageRank[i]);
                             }

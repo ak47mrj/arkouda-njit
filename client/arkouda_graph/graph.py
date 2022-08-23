@@ -585,7 +585,7 @@ def graph_jaccard_coefficient(graph: Graph) -> pdarray:
         return create_pdarray(repMsg)
 
 @typechecked
-def graph_page_rank(graph: Graph) -> pdarray:
+def graph_page_rank(graph:\ Graph,Damping_factor:float=0.85,threshold:float=0.00001) -> pdarray:
         """
         This function will return the pagerank of each vertex in a static graph.
         Returns
@@ -602,7 +602,8 @@ def graph_page_rank(graph: Graph) -> pdarray:
         RuntimeError
         """
         cmd="segmentedGraphPR"
-        args = "{} {} {} {} {}".format(
+        args = "{} {} {} {} {} {} {}".format(
+                 Damping_factor,threshold,\
                  graph.n_vertices,graph.n_edges,\
                  graph.directed,graph.weighted,\
                  graph.name)
