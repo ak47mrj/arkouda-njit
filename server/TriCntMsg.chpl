@@ -5,7 +5,7 @@ module TriCntMsg {
   use ServerErrors;
   use Logging;
   use Message;
-  use SegmentedArray;
+  use SegmentedString;
   use ServerErrorStrings;
   use ServerConfig;
   use MultiTypeSymbolTable;
@@ -140,7 +140,7 @@ module TriCntMsg {
                   var srclocal=src.localSubdomain();
                   var ewlocal=e_weight.localSubdomain();
 
-                  while r.readline(line) {
+                  while r.readLine(line) {
                       if NumCol==2 {
                            (a,b)=  line.splitMsgToTuple(2);
                       } else {
@@ -207,7 +207,7 @@ module TriCntMsg {
                             ref A = ary;
                             const r = 0..#nBits by bitsPerDigit;
                             for rshift in r {
-                                 const myDigit = (r.high - rshift) / bitsPerDigit;
+                                 const myDigit = (r.highBound - rshift) / bitsPerDigit;
                                  const last = myDigit == 0;
                                  forall (m, a) in zip(merged, A) {
                                      m[curDigit+myDigit] =  getDigit(a, rshift, last, neg):uint(bitsPerDigit);
@@ -298,7 +298,7 @@ module TriCntMsg {
                      ref A = ary;
                      const r = 0..#nBits by bitsPerDigit;
                      for rshift in r {
-                        const myDigit = (r.high - rshift) / bitsPerDigit;
+                        const myDigit = (r.highBound - rshift) / bitsPerDigit;
                         const last = myDigit == 0;
                         forall (m, a) in zip(merged, A) {
                              m[curDigit+myDigit] =  getDigit(a, rshift, last, neg):uint(bitsPerDigit);
@@ -977,7 +977,7 @@ module TriCntMsg {
                         start_iR[i]=-1;
                   }
 
-                  while r.readline(line) {
+                  while r.readLine(line) {
                       if NumCol==2 {
                            (a,b)=  line.splitMsgToTuple(2);
                       } else {
@@ -1040,7 +1040,7 @@ module TriCntMsg {
                             ref A = ary;
                             const r = 0..#nBits by bitsPerDigit;
                             for rshift in r {
-                                 const myDigit = (r.high - rshift) / bitsPerDigit;
+                                 const myDigit = (r.highBound - rshift) / bitsPerDigit;
                                  const last = myDigit == 0;
                                  forall (m, a) in zip(merged, A) {
                                      m[curDigit+myDigit] =  getDigit(a, rshift, last, neg):uint(bitsPerDigit);
@@ -1158,7 +1158,7 @@ module TriCntMsg {
                      ref A = ary;
                      const r = 0..#nBits by bitsPerDigit;
                      for rshift in r {
-                        const myDigit = (r.high - rshift) / bitsPerDigit;
+                        const myDigit = (r.highBound - rshift) / bitsPerDigit;
                         const last = myDigit == 0;
                         forall (m, a) in zip(merged, A) {
                              m[curDigit+myDigit] =  getDigit(a, rshift, last, neg):uint(bitsPerDigit);
@@ -1761,7 +1761,7 @@ module TriCntMsg {
                   initvalue(start_i3,-1);
                   initvalue(start_iR3,-1);
 
-                  while r.readline(line) {
+                  while r.readLine(line) {
                       if NumCol==2 {
                            (a,b)=  line.splitMsgToTuple(2);
                       } else {
@@ -1877,7 +1877,7 @@ module TriCntMsg {
                             ref A = ary;
                             const r = 0..#nBits by bitsPerDigit;
                             for rshift in r {
-                                 const myDigit = (r.high - rshift) / bitsPerDigit;
+                                 const myDigit = (r.highBound - rshift) / bitsPerDigit;
                                  const last = myDigit == 0;
                                  forall (m, a) in zip(merged, A) {
                                      //writeln("merged element=",m," a=",a);
@@ -2421,13 +2421,11 @@ module TriCntMsg {
 
 
 
-    proc registerMe() {
-        use CommandMap;
-        registerFunction("segmentedStreamFile", segStreamFileMsg);
-        registerFunction("segmentedGraphTri", segTriCntMsg);
-        registerFunction("segmentedStreamTri", segStreamTriCntMsg);
-        registerFunction("segmentedPLStreamTri", segStreamPLTriCntMsg);
-    }
+   use CommandMap;
+   registerFunction("segmentedStreamFile", segStreamFileMsg);
+   registerFunction("segmentedGraphTri", segTriCntMsg);
+   registerFunction("segmentedStreamTri", segStreamTriCntMsg);
+   registerFunction("segmentedPLStreamTri", segStreamPLTriCntMsg);
 
 
 }

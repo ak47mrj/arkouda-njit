@@ -1,9 +1,10 @@
 module SegmentedSuffixArray {
+  use ChplConfig;
   use MultiTypeSymbolTable;
   use MultiTypeSymEntry;
   use CommAggregation;
   use SipHash;
-  use SegmentedArray;
+  use SegmentedString;
   use RadixSortLSD only radixSortLSD_ranks;
   use Reflection;
   use PrivateDist;
@@ -145,7 +146,7 @@ module SegmentedSuffixArray {
        Chapel range, i.e. low..high by stride, not a Python slice.
        Returns arrays for the segment offsets and bytes of the slice.*/
     proc this(const slice: range(stridable=true)) throws {
-      if (slice.low < offsets.aD.low) || (slice.high > offsets.aD.high) {
+      if (slice.lowBound < offsets.aD.low) || (slice.highBound > offsets.aD.high) {
           saLogger.error(getModuleName(),getRoutineName(),getLineNumber(),
           "Array is out of bounds");
           throw new owned OutOfBoundsError();
@@ -155,20 +156,20 @@ module SegmentedSuffixArray {
         return (makeDistArray(0, int), makeDistArray(0, int));
       }
       // Start of bytearray slice
-      var start = offsets.a[slice.low];
+      var start = offsets.a[slice.lowBound];
       // End of bytearray slice
       var end: int;
-      if (slice.high == offsets.aD.high) {
+      if (slice.highBound == offsets.aD.highBound) {
         // if slice includes the last string, go to the end of values
-        end = values.aD.high;
+        end = values.aD.highBound;
       } else {
-        end = offsets.a[slice.high+1] - 1;
+        end = offsets.a[slice.highBound+1] - 1;
       }
       // Segment offsets of the new slice
       var newSegs = makeDistArray(slice.size, int);
       ref oa = offsets.a;
       forall (i, ns) in zip(newSegs.domain, newSegs) with (var agg = newSrcAggregator(int)) {
-        agg.copy(ns, oa[slice.low + i]);
+        agg.copy(ns, oa[slice.lowBound + i]);
       }
       // Offsets need to be re-zeroed
       newSegs -= start;
@@ -304,7 +305,7 @@ module SegmentedSuffixArray {
 
     /* Apply a hash function to all strings. This is useful for grouping
        and set membership. The hash used is SipHash128.*/
-    proc hash() throws {
+    proc siphash() throws {
       // 128-bit hash values represented as 2-tuples of uint(64)
       var hashes: [offsets.aD] 2*uint(64);
       // Early exit for zero-length result
@@ -333,7 +334,7 @@ module SegmentedSuffixArray {
         // Hash all strings
         saLogger.debug(getModuleName(),getRoutineName(),getLineNumber(), "Hashing strings");
         if logLevel == LogLevel.DEBUG { t.start(); }
-        var hashes = this.hash();
+        var hashes = this.siphash();
 
         if logLevel == LogLevel.DEBUG {
             t.stop();
@@ -451,7 +452,7 @@ module SegmentedSuffixArray {
     var t = new Timer();
     saLogger.debug(getModuleName(),getRoutineName(),getLineNumber(),"Hashing strings");
     if logLevel == LogLevel.DEBUG { t.start(); }
-    const hashes = mainSar.hash();
+    const hashes = mainSar.siphash();
     if logLevel == LogLevel.DEBUG {
         t.stop();
         saLogger.debug(getModuleName(),getRoutineName(),getLineNumber(),
@@ -469,7 +470,7 @@ module SegmentedSuffixArray {
         // Local hashes of second array
         ref mySet = localTestHashes[here.id];
         mySet.requestCapacity(testSar.size);
-        const testHashes = testSar.hash();
+        const testHashes = testSar.siphash();
         for h in testHashes {
           mySet += h;
         }
