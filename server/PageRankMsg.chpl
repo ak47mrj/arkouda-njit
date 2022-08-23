@@ -5,7 +5,7 @@ module PageRankMsg {
   use ServerErrors;
   use Logging;
   use Message;
-  use SegmentedArray;
+  use SegmentedString;
   use ServerErrorStrings;
   use ServerConfig;
   use MultiTypeSymbolTable;
@@ -185,10 +185,10 @@ module PageRankMsg {
 
 
 
-    proc registerMe() {
-        use CommandMap;
-        registerFunction("segmentedGraphPR", segPageRankMsg);
-    }
+    
+    use CommandMap;
+    registerFunction("segmentedGraphPR", segPageRankMsg);
+    
 
 
 }
